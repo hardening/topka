@@ -1,0 +1,22 @@
+[Unit]
+Description=topka
+After=network.target
+# Requires=dbus.service
+
+[Service]
+Type=forking
+# ExecStartPre=-${OGON_CFG_PATH}/ogon_cleanup.sh
+#ExecStart=/home/david/dev/topka/bin/topka --logConfig=/home/david/dev/workspaceOgon/topka/topka.logconfig --pidFile=/tmp/topka.pid /home/david/dev/workspaceOgon/topka/confs/sample.conf 
+ExecStart=/home/david/dev/topka3/bin/topka --journald --pidFile=/tmp/topka.pid --debug /home/david/dev/workspaceOgon/topka/confs/sample.conf 
+ExecStop=/home/david/dev/topka3/bin/topka --kill --pidFile=/tmp/topka.pid --logConfig=/home/david/dev/workspaceOgon/topka/topka.logconfig
+# ExecReload=/bin/kill -HUP $MAINPID
+
+User=root
+Group=root
+KillMode=control-group
+PIDFile=/tmp/topka.pid
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

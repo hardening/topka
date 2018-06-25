@@ -1,0 +1,84 @@
+syntax="proto2";
+package topka.launcher;
+
+enum MSGTYPE {
+	PingServer = 0;
+	SetSid = 1;
+	Exec = 2;
+	ChildData = 3;
+	ChildDeathNotify = 4;
+	Kill = 5;
+	Exit = 6;
+	StartSession = 7;
+}
+
+message PingServerRequest {
+}
+
+message PingServerResponse {
+}
+
+message SetSidRequest {
+}
+
+message SetSidResponse {
+	required bool success = 1;
+}
+
+message ExecRequest {	
+	required uint32 uid = 1;
+	required uint32 gid = 2;
+	map<string, string> env = 3;
+	repeated string command = 4;
+	required string directory = 5;
+	required uint32 sessionId = 6;
+	required string remoteIp = 7;
+	map<uint32, string> files = 8;
+}
+
+message ExecResponse {
+	required uint32 pid = 1;
+}
+
+message ChildDataRequest {
+	required uint32 pid = 1;
+	required uint32 fd = 2;
+	required bytes data = 3;
+}
+
+message ChildDataResponse {
+	required bool success = 1;
+}
+
+message KillRequest {
+	required uint32 pid = 1;
+}
+
+message KillResponse {
+	required bool success = 1;
+}
+
+message ChildDeathNotifyRequest {
+	required uint32 pid = 1;
+}
+
+message ChildDeathNotifyResponse {
+	required bool success = 1;
+}
+
+message ExitRequest {
+}
+
+message ExitResponse {
+}
+
+message StartSessionRequest {
+	required string serviceName = 1;
+	required string userName = 2;
+	required string remoteHost = 3;
+}
+
+message StartSessionResponse {
+	required bool success = 1;
+	map<string, string> populatedEnv = 2;
+}

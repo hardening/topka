@@ -1,0 +1,10 @@
+pyopenssl
+twisted
+protobuf
+thrift
+service_identity
+dbus-python
+systemd-python
+pamela
+
+# thrift3-binary-protocol
