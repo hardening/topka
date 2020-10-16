@@ -52,7 +52,7 @@ class OtsApiHandler(object):
 
     def logonConnection(self, username, password, domain):
         logger.debug("logonConnection(username={0} password={1} domain={2}".format(username, "****", domain))
-        authContext = self.topka.authenticateUser(username, domain, password) 
+        authContext = self.topka.authenticateUser(username, domain, password, {}) 
         if not authContext:
             logger.info('logonConnection: invalid login/password')
             return ttypes.TReturnLogonConnection(False, "")

@@ -22,7 +22,7 @@ class PamAuthProvider(auth.AuthenticationProvider):
     def canListUsers(self):
         return False
     
-    def authenticate(self, login, domain, password):
+    def authenticate(self, login, domain, password, _props):
         try:
             handle = pamela.authenticate(login, password, self.service, resetcred=False, close=False)
             return PamAuthContext(handle, login, domain, self.permProvider.getPermission(login))

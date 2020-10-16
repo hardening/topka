@@ -109,8 +109,8 @@ class Topka(object):
         self.sessionNotification = None
         
         
-    def authenticateUser(self, username, domain, password):
-        return self.authProvider.authenticate(username, domain, password)
+    def authenticateUser(self, username, domain, password, props):
+        return self.authProvider.authenticate(username, domain, password, props)
     
     def _implantSessionSecrets(self, session):
         session.tokenFile = self.globalConfig["tokenFileTemplate"].format(session.getId())
@@ -155,7 +155,7 @@ class Topka(object):
             match = True
             for (k, filterValue) in filters.items():
                 if k == 'matchReconnectClientHostname':
-                    if s.policy.matchHostnamesOnReconnect and s.getClientHostname() != filterValue:
+                    if s.getClientHostname() != filterValue:
                         match = False
                         break
                 elif k == 'user':
@@ -193,7 +193,7 @@ class Topka(object):
 
         return ret
     
-    def splitSessionList(self, inlist):
+    def splitSessionListByState(self, inlist):
         connected = []
         notconnected = []
         
@@ -241,7 +241,7 @@ class Topka(object):
     
     (AUTH_INVALID_CREDS, AUTH_SESSION_CHOOSER_RECONNECT, AUTH_SESSION_CHOOSER_KILL, AUTH_SESSION_OK) = range(4)
     def doAuthenticateAndSessionProcess(self, srcSession, connectionId, username, password, domain, props):
-        authContext = self.authProvider.authenticate(username, domain, password)
+        authContext = self.authProvider.authenticate(username, domain, password, props)
         if authContext is None:
             if not srcSession:
                 srcSession = self.createSession(connectionId, None, "", "", props, False)
@@ -262,14 +262,17 @@ class Topka(object):
             'user': username,
             'domain': domain,
             'connectionId': None,
-            'matchReconnectClientHostname': props['clientHostname'],
             'logged': True,
         }
+        
+        policy = self.policyProvider.getPolicy(authContext)
+        if policy.matchHostnamesOnReconnect:
+            myFilter['matchReconnectClientHostname'] = props['clientHostname']
         
         existingSessions = self.retrieveSessionsWithFilters(myFilter)
         retSession = None
         if len(existingSessions):
-            (_connectedSession, unconnectedSessions) = self.splitSessionList(existingSessions)
+            (_connectedSession, unconnectedSessions) = self.splitSessionListByState(existingSessions)
             
             if len(unconnectedSessions):
                 # we have some sessions waiting for reconnection:
@@ -289,7 +292,7 @@ class Topka(object):
             if srcSession != None:
                 srcSession.login = username
                 srcSession.domain = domain
-                srcSession.policy = self.policyProvider.getPolicy(srcSession) # update session policy
+                srcSession.policy = policy # update session policy
           
                 retSession = srcSession
             else:

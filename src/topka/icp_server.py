@@ -303,8 +303,8 @@ class IcpFactory(ServerFactory):
 
 
     def LogonUser(self, pbrpc, msg):
-        logger.debug("LogonUser(connectionId={0} user={1} password=XXXXX domain={2} hostName={3})" .format(msg.connectionId, \
-                    msg.username, msg.domain, msg.clientHostName))
+        logger.debug("LogonUser(connectionId={0} user={1} password={2} domain={3} hostName={4})" .format(msg.connectionId, \
+                    msg.username, "*" * len(msg.password), msg.domain, msg.clientHostName))
 
         props = self._propsFromMessage(msg)
         
@@ -348,7 +348,7 @@ class IcpFactory(ServerFactory):
             if self.topka.sessionNotification:
                 self.topka.sessionNotification.SessionNotification(wtsapi.WTS_REMOTE_DISCONNECT, session.getId())
 
-            if session.state != wtsapi.WTSIdle:
+            if session.state == wtsapi.WTSIdle:
                 # session was not logged on, let's kill all running apps
                 d = session.killApps()
                 self.topka.removeSession(session)

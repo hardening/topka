@@ -40,9 +40,9 @@ class CascadingProvider(AuthenticationProvider):
                 return True
         return False
     
-    def authenticate(self, login, domain, password):
+    def authenticate(self, login, domain, password, props):
         for p in self.providers:
-            ctx = p.authenticate(login, domain, password)
+            ctx = p.authenticate(login, domain, password, props)
             if ctx != None:
                 return ctx
             
@@ -88,13 +88,13 @@ class DomainMapProvider(AuthenticationProvider):
         
         return self.defaultProvider.haveUser(login, domain)
             
-    def authenticate(self, login, domain, password):
+    def authenticate(self, login, domain, password, props):
         provider = self.domainMap.get(domain, None)
         if provider:
-            return provider.authenticate(login, domain, password)
+            return provider.authenticate(login, domain, password, props)
         
         if not self.defaultProvider:
             return None
     
-        return self.defaultProvider.authenticate(login, domain, password)
+        return self.defaultProvider.authenticate(login, domain, password, props)
     

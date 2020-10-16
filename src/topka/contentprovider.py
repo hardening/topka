@@ -427,6 +427,10 @@ class QtContentProvider(ContentProvider):
         geom = self.appConfig.get('initialGeometry', qtBackendConfig.get('initialGeometry', None))
         if geom:
             geomString = ":width={0}:height={1}".format(*geom.split('x', 2))
+            
+        if 'allowReconnection' in self.appConfig and self.appConfig['allowReconnection']:
+            geomString += ":allowReconnection"
+        
         args = self.appConfig['command']
         if not isinstance(args, list):
             args = [args]
@@ -442,9 +446,48 @@ class QtContentProvider(ContentProvider):
         return self.initSpawner(topka, self.appConfig) \
             .addCallback(self.populateSpawnerEnv) \
             .addCallback(launchCb)
+
+class SpiceContentProvider(ContentProvider):
+    ''' @summary: a content provider for a spice connection '''
+    
+    __name__ = "spice"
+    
+    def __init__(self, appName, appConfig):
+        super(SpiceContentProvider, self).__init__(appName, appConfig)
+        self.appProcess = None
+        
+    def launch(self, topka, session, ogonCreds):
+        globalConfig = topka.globalConfig
+
+        self.prepareVariables(topka, session, ogonCreds)
+        if not self.computeAppVariables():
+            return defer.fail(Exception("error computing application variables"))
+
+        self.env = self.buildEnv(topka.globalConfig, self.contextVars)
+        self.preparePipePaths(globalConfig)
+        
+        if os.path.exists(self.pipePath):
+            os.remove(self.pipePath)
+        
+        args = self.appConfig['command']
+        if not isinstance(args, list):
+            args = [args]
+        
+        
+
+        def launchCb(_v):
+            proto = TracingProcess(self, self.appName)
+            
+            return self.processSpawner.launch(proto, self.runDir, args, self.env, self.runAsUser.uid, self.runAsUser.gid, None)
+        
+        return self.initSpawner(topka, self.appConfig) \
+            .addCallback(self.populateSpawnerEnv) \
+            .addCallback(launchCb)
+
   
 allContentProviders = {
     'static': StaticContentProvider,
     'X11': X11ContentProvider,
     'qt': QtContentProvider,
+    'spice': SpiceContentProvider,
 }

@@ -9,14 +9,20 @@ import topka.wtsapi as wtsapi
 logger = logging.getLogger("auth")
 
 class InMemoryDbAuthProvider(auth.AuthenticationProvider):
-    ''' @summary an authorization orovider that operates from a dict '''
+    ''' @summary an authentication provider that operates from a dict '''
+
 
     def __init__(self, loginMap, hashmethod = None, permProvider = auth.UserMapPermissionProvider({'*': wtsapi.WTS_PERM_FLAGS_USER})):
+        '''
+            @param loginMap: a map giving login/passwords
+            @param hashmethod: a function to apply to hash passwords and compare them
+            @param permProvider: a permission provider 
+        '''
         self.hash_method = hashmethod
         self.credentials = loginMap
         self.permProvider = permProvider
         
-    def authenticate(self, login, domain, password):
+    def authenticate(self, login, domain, password, _props):
         if self.hash_method:        
             hasher = self.hash_method()
             hasher.update(password.encode('utf8'))
@@ -37,9 +43,14 @@ class InMemoryDbAuthProvider(auth.AuthenticationProvider):
     
 
 class FileDbAuthProvider(InMemoryDbAuthProvider):
-    """  @summary: an authorisation provider taking users in a password file  """
+    """  @summary: an authorisation provider taking users in a htpasswd file  """
     
     def __init__(self, path, hashmethod = hashlib.sha1, permProvider = auth.UserMapPermissionProvider({'*': wtsapi.WTS_PERM_FLAGS_USER})):
+        '''
+            @param path: a path to a .htpasswd style file
+            @param hashmethod: a function to apply to hash passwords and compare them
+            @param permProvider: a permission provider 
+        '''
         super(FileDbAuthProvider, self).__init__(None, hashmethod, permProvider)
         self.file_path = path
         self.file_mtime = 0
@@ -64,10 +75,10 @@ class FileDbAuthProvider(InMemoryDbAuthProvider):
         
         return True
     
-    def authenticate(self, login, domain, password):
+    def authenticate(self, login, domain, password, props):
         if not os.path.exists(self.file_path):
-            logger.error("file %s doesn't exist" % self.file_path) 
-            return False
+            logger.error("password file %s doesn't exist" % self.file_path) 
+            return None
         
         mtime = os.path.getmtime(self.file_path)
         if not self.credentials or (mtime > self.file_mtime):
@@ -76,13 +87,17 @@ class FileDbAuthProvider(InMemoryDbAuthProvider):
                 return None
             self.file_mtime = mtime
             
-        return super(FileDbAuthProvider, self).authenticate(login, domain, password)
+        return super(FileDbAuthProvider, self).authenticate(login, domain, password, props)
     
 
 class GroupPermissionProvider(auth.PermissionProvider):
     ''' @summary: a permission provider based on group roles '''
     
     def __init__(self, groupMap, defaultPerm = 0):
+        '''
+            @param groupMap: 
+            @param defaultPerm:
+        '''
         self.defaultPerm = defaultPerm
         self.groupsMap = {}
         for k, v in groupMap.items():

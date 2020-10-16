@@ -1,20 +1,20 @@
 import unittest
-import aaa.auth
-import aaa.localdbauth
-import aaa.usermapper
-from topka import DEFAULT_CONFIG, updateConfigMap
-import core
+
+from topka.aaa.localdbauth import InMemoryDbAuthProvider
+from topka.aaa.usermapper import IdentityUserMapper
+from topka.__main__ import DEFAULT_CONFIG, updateConfigMap
+from topka import core
 
 class Test(unittest.TestCase):
 
     def testCreateSession(self):
-        authProvider = aaa.localdbauth.InMemoryDbAuthProvider({'user1': 'pass1'})
+        authProvider = InMemoryDbAuthProvider({'user1': 'pass1'})
         
         mainConfig = DEFAULT_CONFIG.copy()
         config = {
             'globalConfig': {
                 'authProvider': authProvider,
-                'userMapper': aaa.usermapper.IdentityUserMapper(),
+                'userMapper': IdentityUserMapper(),
             }
         }
         updateConfigMap(config, mainConfig)

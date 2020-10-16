@@ -1,24 +1,29 @@
 from topka import wtsapi
 
 class AuthContext(object):
-    ''' @summary: '''
+    ''' @summary: generic authentication context '''
     
     def __init__(self, login=None, domain=None, perm=wtsapi.WTS_PERM_FLAGS_GUEST):
         self.login = login
         self.domain = domain
         self.permissions = perm
+        self.items = {}
+        
+    def contextItems(self):
+        return self.items
 
 
 class AuthenticationProvider(object):
     ''' @summary: base class for authentication providers '''
     
-    def authenticate(self, _login, _domain, _password):
+    def authenticate(self, _login, _domain, _password, _props):
         '''
             Authenticates a user
             
             @param login: the login of the connection user
             @param domain: the domain for this user
             @param password: the password to login
+            @param props: properties associated with the connecting user
             @return if the authentication has completed successfully
         '''
         raise NotImplemented()
@@ -35,14 +40,14 @@ class AuthenticationProvider(object):
 class YesProvider(AuthenticationProvider):
     ''' @summary: a provider that always answers yes '''
     
-    def authenticate(self, login, domain, _password):
+    def authenticate(self, login, domain, _password, _props):
         return AuthContext(login, domain, perm=wtsapi.WTS_PERM_FLAGS_FULL)
 
 
 class NoProvider(AuthenticationProvider):
     ''' @summary: a provider that always answers no '''
     
-    def authenticate(self, _login, _domain, _password):
+    def authenticate(self, _login, _domain, _password, _props):
         return None
 
 
