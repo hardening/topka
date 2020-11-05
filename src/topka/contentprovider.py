@@ -247,7 +247,7 @@ class StaticContentProvider(ContentProvider):
         self.pipePath = self.appConfig['path']
         self.pipeName = os.path.basename(self.pipePath)
         
-    def launch(self, _topka, _session, ogonCredentials):
+    def launch(self, _topka, _session, _ogonCredentials):
         if not os.path.exists(self.pipePath):
             return defer.fail(Exception("static pipePath={0} does not exist".format(self.pipePath)))
         

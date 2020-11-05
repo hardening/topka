@@ -19,15 +19,15 @@ class Test(unittest.TestCase):
         }
         updateConfigMap(config, mainConfig)
         
-        topka = core.Topka(mainConfig, False)
-        self.assertTrue( topka.authenticateUser('user1', 'domain', 'pass1') )
-        self.assertFalse( topka.authenticateUser('user1', 'domain', 'wrongpass') )
-        self.assertFalse( topka.authenticateUser('wronguser', 'domain', 'pass1') )
-        
         # create a session for logon and check some properties
         props = {
             'clientHostname': 'hostname'
         }
+        topka = core.Topka(mainConfig, False)
+        self.assertTrue( topka.authenticateUser('user1', 'domain', 'pass1', props) )
+        self.assertFalse( topka.authenticateUser('user1', 'domain', 'wrongpass', props) )
+        self.assertFalse( topka.authenticateUser('wronguser', 'domain', 'pass1', props) )
+        
         
         session1 = topka.retrieveLogonSession(1, 'user1', 'pass1', 'domain', props)
         self.assertTrue(session1.isAuthenticated())

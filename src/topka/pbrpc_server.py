@@ -103,12 +103,12 @@ class PbrpcProtocol(Protocol):
             if handler:
                 # if we have a handler it's a request, and handler will handle the response 
                 def timeoutCb():
-                    try:
-                        del self.pendingRequests[tag]
-                    except:
-                        pass
-                    handler.callback((pbRPC_pb2.RPCBase.FAILED, None))
-                    
+                    watchdogAndDefer = self.pendingRequests.pop(tag, None)
+                    if watchdogAndDefer:
+                        (w, defer) =  watchdogAndDefer
+                        logger.error("request tag={0} is in timeout".format(tag))
+                        defer.callback((pbRPC_pb2.RPCBase.FAILED, None))
+
                 deferredWatchdog = reactor.callLater(REQUEST_TIMEOUT, timeoutCb)
                 self.pendingRequests[tag] = (deferredWatchdog, handler)
         
@@ -162,14 +162,15 @@ class PbrpcProtocol(Protocol):
             ret.addCallbacks(sendMessagesCb, deferredError)
 
     def treat_response(self, pbRpc):
-        deferAndWatchdog = self.pendingRequests.get(pbRpc.tag, None)
+        deferAndWatchdog = self.pendingRequests.pop(pbRpc.tag, None)
         if deferAndWatchdog:
             logger.debug('treat_reponse: tag={0} msgType={1} status={2} payloadLen={3}'.format(pbRpc.tag, pbRpc.msgType, pbRpc.status, len(pbRpc.payload)))
-            del self.pendingRequests[pbRpc.tag]
             
             (watchdog, d) = deferAndWatchdog
-                                
-            watchdog.cancel()
+            if watchdog.active():
+                logger.debug('killing watchdog for request tag={0}', pbRpc.tag)
+                watchdog.cancel()
+
             d.callback((pbRpc.status, pbRpc.payload))
         else:
             logger.error("treat_response(): receiving a response(tag={0} type={1}) but no request is registered here".format(pbRpc.tag, pbRpc.msgType))

@@ -1,5 +1,5 @@
 import unittest
-from content_provider import expandVars
+from topka.utils import expandVars
 
 class Test(unittest.TestCase):
 

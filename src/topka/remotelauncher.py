@@ -12,8 +12,8 @@ from topka.pbrpc_server import PbrpcProtocol
 from topka.utils import buildMethodDescriptor
 
 
-METHODS_CLIENT = ("ChildData", "ChildDeathNotify")
-METHODS_SERVER = ("PingServer", "Exec", "SetSid", "Kill", "StartSession")
+METHODS_CLIENT = ('ChildData', 'ChildDeathNotify')
+METHODS_SERVER = ('PingServer', 'Exec', 'SetSid', 'Kill', 'StartSession', 'Exit')
 
 logger = logging.getLogger('launcher')
 
@@ -208,14 +208,14 @@ class RemoteLauncherClient(PbrpcProtocol):
                 if status != pbRPC_pb2.RPCBase.SUCCESS:
                     logger.error('Exit request failed')
                     if handler:
-                        handler.errback(False)
+                        handler.errback(Exception('Exit request failed'))
                     return
                 
                 if handler:
                     handler.callback(True)
             except:
                 if handler:
-                    handler.errback(False)
+                    handler.errback(Exception(False))
             
         d = defer.Deferred()
         d.addCallback(answerCb)
@@ -462,23 +462,35 @@ def main(args=None):
         args = sys.argv[1:]
         
     try:
-        opts, _args = getopt.getopt(args, "o:hs:", ['output=', "help", "socket=", "single"])
+        opts, _args = getopt.getopt(args, "o:hs:", ['output=', "help", "socket=", "single", "log-level="])
     except getopt.GetoptError as err:
-        sys.stderr.write('error parsing args: {0}'.format(err));
+        sys.stderr.write('error parsing args: {0}'.format(err))
         return 1
     
     bindSocket = None
     singleConnection = False
+    logLevel = logging.ERROR
     for option, value in opts:
         if option in ('-h', '--help'):
-            print("usage: topkaLauncher [-o <logFile>|--output=<logFile>] [-h|--help] [-s <socket>|--socket=<socket>] [--single]")
+            print("usage: topkaLauncher [-o <logFile>|--output=<logFile>] [-h|--help] [-s <socket>|--socket=<socket>] [--single] [--log-level=<level>]")
             print("\t-h, --help: print this help")
             print("\t-o <file>, --output=<file>: output logs to <file>")
             print("\t-s <socket>, --socket=<socket>: run in unix socket server mode")
             print("\t--single: handle a single connection and then exit")
+            print("\t--log-level=<level>: adjust log level")
             return 0
+        elif option in ('--log-level',):
+            levelLower = value.lower()
+            levels = {
+                "error": logging.ERROR, "info": logging.INFO,
+                "warn": logging.WARN,   "debug": logging.DEBUG
+            }
+            if not levelLower in levels:
+                sys.stderr.write('invalid log level: {0}'.format(value))
+                return 1
+            logLevel = levels[levelLower]
         elif option in ('-o', '--output'):
-            logging.basicConfig(level=logging.DEBUG, filename=value)
+            logging.basicConfig(level=logLevel, filename=value)
         elif option in ('-s', '--socket'):
             bindSocket = value
         elif option in ('--single'):

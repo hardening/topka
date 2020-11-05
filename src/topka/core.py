@@ -93,12 +93,7 @@ class Topka(object):
     '''
     
     def __init__(self, config, canImpersonnate):
-        self.config = config
-        self.globalConfig = config['globalConfig']
-        self.authProvider = self.globalConfig['authProvider']
-        self.policyProvider = self.globalConfig['policyProvider']
-        self.localUserMapper = self.globalConfig['localUserMapper']
-        self.appsDefs = self.config['applications']
+        self.reloadConfig(config)
         self.canImpersonnate = canImpersonnate
         
         self.icpFactory = None
@@ -108,6 +103,13 @@ class Topka(object):
         self.system_dbus = None
         self.sessionNotification = None
         
+    def reloadConfig(self, config):
+        self.config = config
+        self.globalConfig = config['globalConfig']
+        self.authProvider = self.globalConfig['authProvider']
+        self.policyProvider = self.globalConfig['policyProvider']
+        self.localUserMapper = self.globalConfig['localUserMapper']
+        self.appsDefs = self.config['applications']
         
     def authenticateUser(self, username, domain, password, props):
         return self.authProvider.authenticate(username, domain, password, props)
@@ -148,7 +150,7 @@ class Topka(object):
             
         self.sessions[sid] = ret
         return ret
-    
+
     def retrieveSessionsWithFilters(self, filters):
         ret = []
         for (sid, s) in self.sessions.items():
@@ -278,15 +280,22 @@ class Topka(object):
                 # we have some sessions waiting for reconnection:
                 # * if there's only one connect to this one;
                 # * otherwise invoke the sessionChooser and the user will choose
+                ''' this is what we should do after
                 if len(unconnectedSessions) > 1:
                     return (self.AUTH_SESSION_CHOOSER_RECONNECT, None)
+                '''
+                while len(unconnectedSessions) > 1:
+                    s = unconnectedSessions.pop(1)
+                    self.killSession(s)
                 
                 retSession = unconnectedSessions[0]
-                
+
+            ''' TODO: later
             policy = existingSessions[0].policy
             if policy.maxUserSessions > 0 and len(existingSessions) > policy.maxUserSessions:
                 # there's a policy limiting the number of sessions per user, and we have passed the limit
                 return (self.AUTH_SESSION_CHOOSER_KILL, None)
+            '''
                 
         if not retSession:
             if srcSession != None:
@@ -316,7 +325,7 @@ class Topka(object):
     def retrieveLogonSession(self, connectionId, username, password, domain, props):
         session = None
 
-        authContext = self.authProvider.authenticate(username, domain, password)
+        authContext = self.authProvider.authenticate(username, domain, password, props)
         if authContext != None:
             # try to reuse a disconnected session
             myFilter = {
