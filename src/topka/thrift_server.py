@@ -51,14 +51,14 @@ class OtsApiHandler(object):
         return versionInfo
 
     def logonConnection(self, username, password, domain):
-        logger.debug("logonConnection(username={0} password={1} domain={2}".format(username, "****", domain))
+        logger.debug("logonConnection(username={0} password={1} domain={2})".format(username, "*" * len(password), domain))
         authContext = self.topka.authenticateUser(username, domain, password, {}) 
         if not authContext:
             logger.info('logonConnection: invalid login/password')
             return ttypes.TReturnLogonConnection(False, "")
         
         if authContext.permissions & wtsapi.WTS_PERM_FLAGS_LOGON == 0:
-            logger.info('logonConnection: {0} not allowed to logon')
+            logger.info('logonConnection: {0}@{1} not allowed to logon'.format(username, domain))
             return ttypes.TReturnLogonConnection(False, "")            
             
         session = self.topka.createSession(None, authContext, username, domain, None, True)

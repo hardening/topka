@@ -3,11 +3,11 @@ import sys
 import os, os.path
 import logging
 from twisted.trial import unittest
+from twisted.internet import reactor, defer
 
 from topka.__main__ import DEFAULT_CONFIG, updateConfigMap
 from topka import core
 
-from twisted.internet import reactor
 
 
 class Test(unittest.TestCase):
@@ -18,7 +18,13 @@ class Test(unittest.TestCase):
     
     def testX11Provider(self):
         mainConfig = DEFAULT_CONFIG.copy()
-        appConfig = {
+        qtAppConfig = {
+            'type': 'qt',
+            'command': [sys.executable, os.path.join(os.path.dirname(__file__), 'fake_qt.py')],
+            'useLauncher': False,
+        }
+
+        x11AppConfig = {
             'type': 'X11',
             'serverPath': [sys.executable, os.path.join(os.path.dirname(__file__), 'fake_xogon.py')],
             'useLauncher': False,
@@ -30,8 +36,8 @@ class Test(unittest.TestCase):
             },
             
             'applications': {
-                'greeter': appConfig,
-                'desktop': appConfig,
+                'qt': qtAppConfig,
+                'x11': x11AppConfig,
             },
         }
         updateConfigMap(config, mainConfig)
@@ -54,28 +60,24 @@ class Test(unittest.TestCase):
         self.assertEquals(authRet, topka.AUTH_INVALID_CREDS, "credentials should be invalid")
         self.assertIsInstance(session, core.TopkaSession, "not a topka session")
         
-        def endOfTest():
-            #reactor.stop()
-            pass
-
-        delayLimiter = reactor.callLater(10.0, self.fail, "callbacks not called in time")
-        
         def cbSuccess(v):
             # print("success={0}".format(v))
-            delayLimiter.cancel()
             return v.kill()
             
             
         def cbError(v):
-            #print("error={0}".format(v))
-            self.fail("error when running Xogon")
-            delayLimiter.cancel()
+            print("error={0}".format(v))
+            self.fail("error when running app")
             
             
-        (_contentProvider, retLaunch) = topka.runApplication('greeter', session)
-        retLaunch.addCallbacks(cbSuccess, cbError)
+        (_contentProvider1, retLaunch1) = topka.runApplication('qt', session)
+        retLaunch1.addCallbacks(cbSuccess, cbError)
+
+        (_contentProvider2, retLaunch2) = topka.runApplication('x11', session)
+        retLaunch2.addCallbacks(cbSuccess, cbError)
+
         
-        return retLaunch
+        return defer.DeferredList([retLaunch1, retLaunch2])
         
         
 

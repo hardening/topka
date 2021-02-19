@@ -33,12 +33,29 @@ def convertFormatString(v):
         ret += "%(" + v[startIndex+2 : endIndex] + ")s"
         startPos = endIndex + 1
 
-def expandVars(strIn, context):
-    if strIn.find("${") < 0:
-        return strIn
-    
-    fmt = convertFormatString(strIn)
-    return fmt % context
+
+def expandVariables(v, context):
+    ret = ""
+    startPos = 0
+    while True:
+        #               v startIndex
+        #    ...........{var}
+        # startPos^         ^ endIndex
+        startIndex = v.find("{", startPos)
+        if startIndex < 0:
+            ret += v[startPos:]
+            return ret
+        
+        endIndex = v.find("}", startIndex+1)
+        if endIndex < 0: 
+            ret += v[startPos:]
+            return ret
+        
+        k = v[startIndex+1 : endIndex]
+        keyValue = context.get(k, "")  
+        ret += v[startPos : startIndex] + str(keyValue)
+        startPos = endIndex + 1
+
 
 def toFileTime(time_t):
     return int((time_t + 11644473600) * 10000000)

@@ -348,8 +348,10 @@ class IcpFactory(ServerFactory):
             if self.topka.sessionNotification:
                 self.topka.sessionNotification.SessionNotification(wtsapi.WTS_REMOTE_DISCONNECT, session.getId())
 
-            if session.state == wtsapi.WTSIdle:
-                # session was not logged on, let's kill all running apps
+            if session.state == wtsapi.WTSIdle or not session.policy.allowReconnect:
+                # let's kill all running apps if
+                #  * session was not logged on (greeter)
+                #  * session's policy doesn't allow reconnection 
                 d = session.killApps()
                 self.topka.removeSession(session)
 

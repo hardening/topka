@@ -1,15 +1,11 @@
 import unittest
-from topka.utils import expandVars
+from topka.utils import expandVariables
 
 class Test(unittest.TestCase):
 
-
-    def testExpandVars(self):
-        context = {
-            "user": "user"
-        }
-        self.assertEquals(expandVars("/var/run/${user}", context), "/var/run/user") 
-        
+    def testExpandVariables(self):
+        context = {'auth:toto': 'totoV'}
+        self.assertEqual(expandVariables("value={auth:toto} unknown={unknown}", context), "value=totoV unknown=")
 
 
 if __name__ == "__main__":

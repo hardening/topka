@@ -4,7 +4,7 @@ import os
 from twisted.internet import protocol, reactor, defer, task
 
 from topka.remotelauncher import RemoteLauncherClient
-from topka.utils import expandVars
+from topka.utils import expandVariables
 
 
 logger = logging.getLogger("contentProvider")
@@ -74,7 +74,7 @@ class RemoteLauncherProcessProtocol(protocol.ProcessProtocol, RemoteLauncherClie
 
 def complementEnvMapFromConfig(v, topkaConfig, contextVars):
     if 'XDG_RUNTIME_DIR' not in v: 
-        v['XDG_RUNTIME_DIR'] = topkaConfig['globalConfig']['xdg_runtime_schema'].format(**contextVars)
+        v['XDG_RUNTIME_DIR'] = expandVariables(topkaConfig['globalConfig']['xdg_runtime_schema'], contextVars)
     
 
 
@@ -104,7 +104,7 @@ class RemoteLauncher(object):
         launcherRunPath = appConfig.get('launcherRunDir', launcherConfig.get('runDir', os.environ.get('HOME', '/tmp')))
         launcherEnv = appConfig.get('launcherEnv', launcherConfig.get('env', os.environ))
         
-        runAs = expandVars(appConfig.get('runAs', '${localUser}'), contextVars)
+        runAs = expandVariables(appConfig.get('runAs', '{localUser}'), contextVars)
         
         d = defer.Deferred()
         self.launcher = RemoteLauncherProcessProtocol(self, d)

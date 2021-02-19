@@ -137,6 +137,11 @@ class ContentProvider(object):
         if ogonCredentials:
             self.contextVars["ogonPid"] = ogonCredentials.pid
             self.contextVars["ogonUid"] = ogonCredentials.uid
+        
+        if session.authContext:
+            for k, v in session.authContext.contextItems().items():
+                self.contextVars["auth:" + k] = v
+            
 
     def computeAppVariables(self):
         try:
@@ -158,7 +163,19 @@ class ContentProvider(object):
         return self
         
     def expandVars(self, v):
-        return v.format(**self.contextVars)
+        return utils.expandVariables(v, self.contextVars)
+    
+    def expandVarsInList(self, l):
+        ret = []
+        for v in l:
+            ret.append( utils.expandVariables(v, self.contextVars) )
+        return ret
+
+    def prepareCommandArgs(self, cmd):
+        ret = []
+        for v in cmd:
+            ret.append(v.format(**self.contextVars))
+        return ret
 
     def testPipeExistanceCb(self, vpid):
         if os.path.exists(self.pipePath):
@@ -217,6 +234,8 @@ class ContentProvider(object):
         logger.info('child {1}({0}) died'.format(p.name, p.vpid))
         if p.name in self.childProcesses:
             self.childProcesses.pop(p.name)
+        else:
+            logger.error("can't find child {1} in the child processes".format(p.name))
         return True
         
     def kill(self):
@@ -342,7 +361,9 @@ class X11ContentProvider(ContentProvider):
         fontpath = self.appConfig.get('fontpath', xBackendConfig['fontpath']) 
         if fontpath:
             args += [ '-fp', fontpath ]
-            
+        
+        args = self.expandVarsInList(args)
+        
         def returnProvider(v):
             return self
             
@@ -359,6 +380,7 @@ class X11ContentProvider(ContentProvider):
 
             if not isinstance(args, list):
                 args = [args]
+            args = self.expandVarsInList(args)
             logger.debug('running WM={0}'.format(' '.join(args)))
 
             wmProcess = ContentProviderProcess(self, 'wm')
@@ -382,7 +404,11 @@ class X11ContentProvider(ContentProvider):
         ret = self.initSpawner(topka, self.appConfig)
         ret.addCallback(launchX11)
         return ret
-        
+
+    def childDied(self, p):
+        super(X11ContentProvider, self).childDied(p)
+        return True
+
 
 
 
@@ -435,9 +461,10 @@ class QtContentProvider(ContentProvider):
         if not isinstance(args, list):
             args = [args]
         if len(args):
-            args = [args[0], '-platform', 'ogon{0}'.format(geomString)] + args[1:]
+            args += ['-platform', 'ogon{0}'.format(geomString)]
         
-
+        args = self.expandVarsInList(args)
+        
         def launchCb(_v):
             proto = TracingProcess(self, self.appName)
             
@@ -471,9 +498,8 @@ class SpiceContentProvider(ContentProvider):
         
         args = self.appConfig['command']
         if not isinstance(args, list):
-            args = [args]
-        
-        
+            args = [args]        
+        args = self.expandVarsInList(args)
 
         def launchCb(_v):
             proto = TracingProcess(self, self.appName)

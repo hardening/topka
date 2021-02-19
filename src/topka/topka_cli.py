@@ -24,7 +24,7 @@ def readAuthToken(sid):
 def getAuthToken(stub, authUser, authDomain, authPassword):
     if not authUser:
         try:
-            if 'OGON_SID' in os.environ.get:
+            if 'OGON_SID' in os.environ:
                 ogonSid = int(os.environ['OGON_SID'])
             return defer.succeed((False, readAuthToken(ogonSid),))
         except:
@@ -32,7 +32,7 @@ def getAuthToken(stub, authUser, authDomain, authPassword):
         
         while not authUser:
             print('enter username:', end='', flush=True)
-            authUser = sys.stdin.readline()
+            authUser = sys.stdin.readline()[:-1]
     
         tokens = authUser.split('@')
         authUser = tokens[0]
@@ -41,11 +41,11 @@ def getAuthToken(stub, authUser, authDomain, authPassword):
 
     while not authDomain:
         print('enter domain:', end='', flush=True)
-        authDomain = sys.stdin.readline()
+        authDomain = sys.stdin.readline()[:-1]
 
     while not authPassword:
         print('enter password:', end='', flush=True)
-        authPassword = sys.stdin.readline()
+        authPassword = sys.stdin.readline()[:-1]
     
     def reqCallback(r):
         if r.success:
@@ -158,6 +158,9 @@ def main(args=None):
             userMessage = value
         elif option in ('--nowait',):
             userWait = False
+        else:
+            print('unknown option {0}'.format(option))
+            sys.exit(1)
 
 
     if not len(extraArgs):

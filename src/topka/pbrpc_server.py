@@ -1,6 +1,5 @@
 import struct
 import logging
-import time
 
 from twisted.internet.protocol import Protocol
 from twisted.internet import defer, reactor
@@ -168,7 +167,7 @@ class PbrpcProtocol(Protocol):
             
             (watchdog, d) = deferAndWatchdog
             if watchdog.active():
-                logger.debug('killing watchdog for request tag={0}', pbRpc.tag)
+                logger.debug('killing watchdog for request tag={0}'.format(pbRpc.tag))
                 watchdog.cancel()
 
             d.callback((pbRpc.status, pbRpc.payload))
